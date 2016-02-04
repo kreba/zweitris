@@ -1,10 +1,10 @@
-import Cell exposing (update, view)
+import Body exposing (update, view)
 import StartApp.Simple exposing (start)
 
 
 main =
   start
-    { model = "blue"
+    { model = []
     , update = update
     , view = view
     }
