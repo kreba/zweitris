@@ -1,10 +1,11 @@
-import Body exposing (update, view)
+import Cell exposing (update, view)
 import StartApp.Simple exposing (start)
+import Html
 
-
+main: Signal Html.Html
 main =
   start
-    { model = []
+    { model = "lightgreen"
     , update = update
     , view = view
     }

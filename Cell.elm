@@ -1,13 +1,12 @@
 module Cell (Model, init, Action, update, view) where
 
-import Debug
+-- import Debug
 import Html exposing (..)
 import Html.Attributes exposing (style)
 import Html.Events exposing (onClick)
 
 
 -- MODEL
-
 type alias Model = String
 
 
@@ -17,28 +16,27 @@ init color = color
 
 -- UPDATE
 
-type Action = Increment | Decrement
+type Action = Click
 
 update : Action -> Model -> Model
 update action model =
-  case action of
-    Increment ->
-      model
+  case model of
+    "lightgreen" -> "lightblue"
+    "lightblue"  -> "lightgreen"
+    _ -> "lightblue"
 
-    Decrement ->
-      model
 
 
 -- VIEW
 
 view : Signal.Address Action -> Model -> Html
 view address model =
-  div [ cellStyle ] [] 
+  div [ cellStyle model, onClick address Click ] []
 
-cellStyle : Attribute
-cellStyle =
+cellStyle : Model -> Attribute
+cellStyle model =
   style
-    [ ("background-color", "lightblue")
-    , ("width", "50px") 
-    , ("height", "50px") 
+    [ ("background-color", model)
+    , ("width", "50px")
+    , ("height", "50px")
     ]
