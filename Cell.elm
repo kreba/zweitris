@@ -1,5 +1,6 @@
 module Cell (Model, init, Action, update, view) where
 
+import Player exposing (Player)
 import Debug
 import Html exposing (..)
 import Html.Attributes exposing (style)
@@ -17,28 +18,23 @@ init color = color
 
 -- UPDATE
 
-type Action = Increment | Decrement
+type Action = SetPlayer Player
 
 update : Action -> Model -> Model
 update action model =
   case action of
-    Increment ->
-      model
-
-    Decrement ->
-      model
-
+    SetPlayer player -> player
 
 -- VIEW
 
 view : Signal.Address Action -> Model -> Html
 view address model =
-  div [ cellStyle ] [] 
+  div [ cellStyle ] []
 
 cellStyle : Attribute
 cellStyle =
   style
     [ ("background-color", "lightblue")
-    , ("width", "50px") 
-    , ("height", "50px") 
+    , ("width", "50px")
+    , ("height", "50px")
     ]

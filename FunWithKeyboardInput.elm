@@ -1,5 +1,6 @@
-module FunWithKeyboardInput where
+module FunWithKeyboardInput () where
 
+import Player exposing (Player)
 import StartApp
 import Html exposing (div, button, text)
 import Html.Events exposing (onClick)
@@ -8,10 +9,6 @@ import Task
 import Keyboard
 
 type alias Model = Int
-
-type Player
-  = Left
-  | Right
 
 type Action
   = Increment Int
