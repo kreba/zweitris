@@ -5,22 +5,20 @@ import Html exposing (..)
 import Keyboard
 import Effects
 
-type alias CellId = Int
-
 type Action
-  = RelayToCell CellId Cell.Action
+  = RelayToCell Cell.Id Cell.Action
   | TogglePause
   | Reset
   | Noop
 
 type alias Model =
-  { cells : List (CellId, Cell.Model)
+  { cells : List Cell.Model
   , paused : Bool
   }
 
 initialModel : Model
 initialModel =
-  { cells = List.map (\id -> ( id , Cell.init Player.Left )) [1..5]
+  { cells = List.map (\id -> Cell.init id Player.Left) [1..5]
   , paused = False
   }
 
@@ -39,8 +37,8 @@ app =
 
 
 togglePause : Bool -> Action
-togglePause spacePressed =
-  if spacePressed then
+togglePause spaceDown =
+  if spaceDown then
     TogglePause
   else
     Noop
@@ -51,7 +49,7 @@ update action oldModel =
   let newModel = case action of
 
       RelayToCell cellId cellAction ->
-        relayUpdateTo cellId cellAction oldModel
+        { oldModel | cells = List.map (updateSingleCell cellId cellAction) oldModel.cells }
 
       TogglePause ->
         { oldModel | paused = not oldModel.paused }
@@ -65,16 +63,13 @@ update action oldModel =
   in
     ( newModel, Effects.none )
 
-relayUpdateTo : CellId -> Cell.Action -> Model -> Model
-relayUpdateTo targetCellId cellAction oldModel =
-  let updateCell ( cellId , oldCellModel ) =
-        if cellId == targetCellId then
-          ( cellId , Cell.update cellAction oldCellModel )
-        else
-          ( cellId , oldCellModel )
-  in
-    { oldModel | cells = List.map updateCell oldModel.cells }
 
+updateSingleCell : Cell.Id -> Cell.Action -> Cell.Model -> Cell.Model
+updateSingleCell targetCellId cellAction cell =
+  if cell.id == targetCellId then
+    Cell.update cellAction cell
+  else
+    cell
 
 view : Signal.Address Action -> Model -> Html
 view address model =
@@ -84,10 +79,10 @@ view address model =
   in
     div [] (info ++ board)
 
-viewCell : Signal.Address Action -> (CellId, Cell.Model) -> Html
-viewCell address (cellId, cellModel) =
-  Cell.view (relaySignalFrom cellId address) cellModel
 
-relaySignalFrom : CellId -> Signal.Address Action -> Signal.Address Cell.Action
-relaySignalFrom cellId address =
-  Signal.forwardTo address (RelayToCell cellId)
+viewCell : Signal.Address Action -> Cell.Model -> Html
+viewCell address cell =
+  let
+    relayAddress = Signal.forwardTo address (RelayToCell cell.id)
+  in
+    Cell.view relayAddress cell
