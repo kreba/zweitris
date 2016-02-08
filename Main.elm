@@ -5,48 +5,89 @@ import Html exposing (..)
 import Keyboard
 import Effects
 
-
-type alias Model = List Cell.Model
+type alias CellId = Int
 
 type Action
-  = SetLeft
-  | SetRight
+  = RelayToCell CellId Cell.Action
+  | TogglePause
+  | Reset
+  | Noop
+
+type alias Model =
+  { cells : List (CellId, Cell.Model)
+  , paused : Bool
+  }
+
+initialModel : Model
+initialModel =
+  { cells = List.map (\id -> ( id , Cell.init Player.Left )) [1..5]
+  , paused = False
+  }
 
 main : Signal Html
 main =
   app.html
 
-
 app : StartApp.App Model
 app =
   start
-    { init = ( [ Cell.init Player.left ] , Effects.none )
+    { init = ( initialModel , Effects.none )
     , update = update
     , view = view
-    , inputs = [ Signal.map toggleCell Keyboard.space ]
+    , inputs = [ Signal.map togglePause Keyboard.space ]
     }
 
-toggleCell : Bool -> Action
-toggleCell spacePressed =
+
+togglePause : Bool -> Action
+togglePause spacePressed =
   if spacePressed then
-    SetLeft
+    TogglePause
   else
-    SetRight
+    Noop
+
 
 update : Action -> Model -> ( Model , Effects.Effects Action )
 update action oldModel =
-  let
-    newModel = List.map (convert action) oldModel
+  let newModel = case action of
+
+      RelayToCell cellId cellAction ->
+        relayUpdateTo cellId cellAction oldModel
+
+      TogglePause ->
+        { oldModel | paused = not oldModel.paused }
+
+      Reset ->
+        initialModel
+
+      Noop ->
+        oldModel
+
   in
     ( newModel, Effects.none )
 
-convert : Action -> Cell.Model -> Cell.Model
-convert action cell =
-  case action of
-    SetLeft  -> Cell.init Player.left
-    SetRight -> Cell.init Player.right
+relayUpdateTo : CellId -> Cell.Action -> Model -> Model
+relayUpdateTo targetCellId cellAction oldModel =
+  let updateCell ( cellId , oldCellModel ) =
+        if cellId == targetCellId then
+          ( cellId , Cell.update cellAction oldCellModel )
+        else
+          ( cellId , oldCellModel )
+  in
+    { oldModel | cells = List.map updateCell oldModel.cells }
 
 
 view : Signal.Address Action -> Model -> Html
 view address model =
-  div [] (List.map (\cell -> Cell.view address cell) model)
+  let
+    info = [ text (if model.paused then "PAUSED" else "RUNNING") ]
+    board = List.map (viewCell address) model.cells
+  in
+    div [] (info ++ board)
+
+viewCell : Signal.Address Action -> (CellId, Cell.Model) -> Html
+viewCell address (cellId, cellModel) =
+  Cell.view (relaySignalFrom cellId address) cellModel
+
+relaySignalFrom : CellId -> Signal.Address Action -> Signal.Address Cell.Action
+relaySignalFrom cellId address =
+  Signal.forwardTo address (RelayToCell cellId)

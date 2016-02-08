@@ -1,9 +1,11 @@
-module Player (Player, left, right) where
+module Player (Player(..), color) where
 
-type alias Player = String
+type Player
+  = Left
+  | Right
 
-left : Player
-left = "blue"
-
-right : Player 
-right = "green"
+color : Player -> String
+color player =
+  case player of
+    Left  -> "lightgreen"
+    Right -> "lightblue"

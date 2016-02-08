@@ -1,10 +1,8 @@
-module Cell (Model, init, Action, update, view) where
+module Cell (Model, init, Action(SetPlayer), update, view) where
 
 import Player exposing (Player)
-import Debug
 import Html exposing (..)
 import Html.Attributes exposing (style)
-import Html.Events exposing (onClick)
 
 
 -- MODEL
@@ -12,8 +10,8 @@ import Html.Events exposing (onClick)
 type alias Model = String
 
 
-init : String -> Model
-init color = color
+init : Player -> Model
+init player = Player.color player
 
 
 -- UPDATE
@@ -23,18 +21,19 @@ type Action = SetPlayer Player
 update : Action -> Model -> Model
 update action model =
   case action of
-    SetPlayer player -> player
+    SetPlayer player -> Player.color player
+
 
 -- VIEW
 
 view : Signal.Address Action -> Model -> Html
 view address model =
-  div [ cellStyle ] []
+  div [ cellStyle model ] []
 
-cellStyle : Attribute
-cellStyle =
+cellStyle : String -> Attribute
+cellStyle color =
   style
-    [ ("background-color", "lightblue")
+    [ ("background-color", color)
     , ("width", "50px")
     , ("height", "50px")
     ]
