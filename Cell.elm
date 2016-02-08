@@ -1,19 +1,19 @@
-module Cell (Id, Model, init, Action(SetPlayer), update, view) where
+module Cell (Position, Model, init, Action(SetPlayer), update, view) where
 
 import Player exposing (Player)
 import Html exposing (..)
-import Html.Attributes exposing (style)
+import Html.Attributes exposing (id, class, style)
 
 
 -- MODEL
 
-type alias Id = Int
+type alias Position = ( Int , Int )
 
-type alias Model = { id : Id , owner : Player }
+type alias Model = { pos : Position , owner : Player }
 
 
-init : Id -> Player -> Model
-init id player = { id = id , owner = player }
+init : Position -> Player -> Model
+init position player = { pos = position , owner = player }
 
 
 -- UPDATE
@@ -31,13 +31,22 @@ update action model =
 view : Signal.Address Action -> Model -> Html
 view address model =
   let
-    cellStyle =
-      style
-        [ ("background-color", Player.color model.owner)
-        , ("width", "1em")
-        , ("height", "1em")
-        , ("padding", "1em")
-        , ("border", "1px solid gray")
-        ]
+    posX = fst model.pos
+    posY = snd model.pos
+    cellSize = 50
+    elementStyle =
+      [ ("background-color", Player.color model.owner)
+      , ("width", toString cellSize ++ "px")
+      , ("height", toString cellSize ++ "px")
+      , ("border", "1px solid gray")
+      , ("position", "absolute")
+      , ("left", toString (posX * cellSize) ++ "px")
+      , ("top", toString (posY * cellSize) ++ "px")
+      ]
   in
-    div [ cellStyle ] [ text <| toString model.id ]
+    div
+      [ class "cell"
+      , id ("cell-" ++ toString posX ++ "-" ++ toString posY)
+      , style elementStyle
+      ]
+      [ text (toString posX ++ ", " ++ toString posY)  ]
