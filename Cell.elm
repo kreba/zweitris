@@ -36,9 +36,11 @@ view address model =
     cellSize = 50
     elementStyle =
       [ ("background-color", Player.color model.owner)
+      , ("box-sizing", "border-box")
       , ("width", toString cellSize ++ "px")
       , ("height", toString cellSize ++ "px")
-      , ("border", "1px solid gray")
+      , ("padding", "3px")
+      , ("border", "1px solid white")
       , ("position", "absolute")
       , ("left", toString (posX * cellSize) ++ "px")
       , ("top", toString (posY * cellSize) ++ "px")
