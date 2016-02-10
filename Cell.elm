@@ -1,6 +1,7 @@
-module Cell (Position, Model, init, Action(SetPlayer), update, view) where
+module Cell where
 
 import Player exposing (Player)
+
 import Html exposing (..)
 import Html.Attributes exposing (id, class, style)
 
@@ -51,4 +52,4 @@ view address model =
       , id ("cell-" ++ toString posX ++ "-" ++ toString posY)
       , style elementStyle
       ]
-      [ text (toString posX ++ ", " ++ toString posY)  ]
+      [ text (toString posX ++ ", " ++ toString posY) ]

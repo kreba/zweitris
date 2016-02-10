@@ -1,48 +1,15 @@
-import Cell
+module Main where
+
+import CellCollection
+import Board
+import MovingPiece
 import Player
-import StartApp exposing (start)
-import Html exposing (..)
-import Html.Attributes exposing (style)
-import Keyboard
+
 import Effects
+import Html exposing (..)
+import Keyboard
+import StartApp exposing (start)
 
-
-type Action
-  = RelayToCell Cell.Position Cell.Action
-  | TogglePause
-  | Reset
-  | Noop
-
-
-type alias Model =
-  { cells : List Cell.Model
-  , paused : Bool
-  }
-
-
-initialModel : Model
-initialModel =
-  { cells = initialBoard { w = 20 , h = 8 }
-  , paused = False
-  }
-
-
-initialBoard : { w : Int , h : Int } -> List Cell.Model
-initialBoard {w,h} =
-  let
-    positions = combinations [1..w] [1..h]
-    cellFor pos = Cell.init pos (leftOrRight pos)
-    leftOrRight pos = if fst pos > w // 2 then Player.Left else Player.Right
-  in
-    List.map cellFor positions
-
-
-{-| Takes two lists and returns all possible combinations of their elements,
-    i.e. their cartesian product.
--}
-combinations : List a -> List b -> List ( a , b )
-combinations xs ys =
-  List.concat (List.map (\x -> List.map (\y -> (x, y)) ys) xs)
 
 main : Signal Html
 main =
@@ -59,20 +26,47 @@ app =
     }
 
 
-togglePause : Bool -> Action
-togglePause spaceDown =
-  if spaceDown then
-    TogglePause
-  else
-    Noop
+-- MODEL
+
+type alias Model =
+  { board : Board.Model
+  , mpLeft : MovingPiece.Model
+  , mpRight : MovingPiece.Model
+  , paused : Bool
+  }
+
+initialModel : Model
+initialModel =
+  { board = Board.init { w = 20 , h = 8 }
+  , mpLeft = MovingPiece.init [ (1,3),(2,3),(2,4),(2,5) ] Player.Left
+  , mpRight = MovingPiece.init [ (19,4),(20,3),(20,4),(20,5) ] Player.Right
+  , paused = False
+  }
+
+
+-- UPDATE
+
+type Action
+  = RelayToBoard CellCollection.Action
+  | RelayToMPLeft CellCollection.Action
+  | RelayToMPRight CellCollection.Action
+  | TogglePause
+  | Reset
+  | Noop
 
 
 update : Action -> Model -> ( Model , Effects.Effects Action )
 update action oldModel =
   let newModel = case action of
 
-      RelayToCell cellId cellAction ->
-        { oldModel | cells = List.map (updateSingleCell cellId cellAction) oldModel.cells }
+      RelayToBoard boardAction ->
+        { oldModel | board = Board.update boardAction oldModel.board }
+
+      RelayToMPLeft pieceAction ->
+        { oldModel | mpLeft = MovingPiece.update pieceAction oldModel.mpLeft }
+
+      RelayToMPRight pieceAction ->
+        { oldModel | mpRight = MovingPiece.update pieceAction oldModel.mpRight }
 
       TogglePause ->
         { oldModel | paused = not oldModel.paused }
@@ -87,26 +81,22 @@ update action oldModel =
     ( newModel, Effects.none )
 
 
-updateSingleCell : Cell.Position -> Cell.Action -> Cell.Model -> Cell.Model
-updateSingleCell targetCellPos cellAction cell =
-  if cell.pos == targetCellPos then
-    Cell.update cellAction cell
+togglePause : Bool -> Action
+togglePause spaceDown =
+  if spaceDown then
+    TogglePause
   else
-    cell
+    Noop
 
+
+-- VIEW
 
 view : Signal.Address Action -> Model -> Html
 view address model =
   let
     info = text (if model.paused then "PAUSED" else "RUNNING")
-    board = div [ style [("position", "absolute")] ] (List.map (viewCell address) model.cells)
+    board = Board.view (Signal.forwardTo address RelayToBoard) model.board
+    mpLeft = MovingPiece.view (Signal.forwardTo address RelayToMPLeft) model.mpLeft
+    mpRight = MovingPiece.view (Signal.forwardTo address RelayToMPRight) model.mpRight
   in
-    div [] [ info , board ]
-
-
-viewCell : Signal.Address Action -> Cell.Model -> Html
-viewCell address cell =
-  let
-    relayAddress = Signal.forwardTo address (RelayToCell cell.pos)
-  in
-    Cell.view relayAddress cell
+    div [] [ info , board , mpLeft , mpRight ]
