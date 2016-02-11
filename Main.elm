@@ -51,6 +51,7 @@ type Action
   = RelayToBoard CellCollection.Action
   | RelayToMPLeft CellCollection.Action
   | RelayToMPRight CellCollection.Action
+  | LeftPlayerGoDown
   | TogglePause
   | Reset
   | Noop
@@ -71,6 +72,9 @@ update action oldModel =
       RelayToMPRight pieceAction ->
         { oldModel | mpRight = MovingPiece.update pieceAction oldModel.mpRight }
 
+      LeftPlayerGoDown ->
+        { oldModel | mpLeft = MovingPiece.moveDown oldModel.mpLeft }
+
       TogglePause ->
         { oldModel | paused = not oldModel.paused }
 
@@ -88,7 +92,7 @@ consumeKeypresses : List (Signal Action)
 consumeKeypresses =
   [ consume "leftPlayerTurn"    Noop
   , consume "leftPlayerGoUp"    Noop
-  , consume "leftPlayerGoDown"  Noop
+  , consume "leftPlayerGoDown"  LeftPlayerGoDown
   , consume "leftPlayerFall"    Noop
   , consume "rightPlayerTurn"   Noop
   , consume "rightPlayerGoUp"   Noop
