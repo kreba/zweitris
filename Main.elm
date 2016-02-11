@@ -4,10 +4,11 @@ import CellCollection
 import Board
 import MovingPiece
 import Player
+import KeyBindings
 
+import Debug
 import Effects
 import Html exposing (..)
-import Keyboard
 import StartApp exposing (start)
 
 
@@ -22,7 +23,7 @@ app =
     { init = ( initialModel , Effects.none )
     , update = update
     , view = view
-    , inputs = [ Signal.map togglePause Keyboard.space ]
+    , inputs = consumeKeypresses
     }
 
 
@@ -57,7 +58,9 @@ type Action
 
 update : Action -> Model -> ( Model , Effects.Effects Action )
 update action oldModel =
-  let newModel = case action of
+  let
+    d1 = Debug.watchSummary "update with action" toString action
+    newModel = case action of
 
       RelayToBoard boardAction ->
         { oldModel | board = Board.update boardAction oldModel.board }
@@ -81,13 +84,25 @@ update action oldModel =
     ( newModel, Effects.none )
 
 
-togglePause : Bool -> Action
-togglePause spaceDown =
-  if spaceDown then
-    TogglePause
-  else
-    Noop
+consumeKeypresses : List (Signal Action)
+consumeKeypresses =
+  [ consume "leftPlayerTurn"    Noop
+  , consume "leftPlayerGoUp"    Noop
+  , consume "leftPlayerGoDown"  Noop
+  , consume "leftPlayerFall"    Noop
+  , consume "rightPlayerTurn"   Noop
+  , consume "rightPlayerGoUp"   Noop
+  , consume "rightPlayerGoDown" Noop
+  , consume "rightPlayerFall"   Noop
+  , consume "pause"             TogglePause
+  ]
 
+consume : String -> Action -> (Signal Action)
+consume actionKey action =
+  let
+    onlyOnKeyDown bool = if bool then Maybe.Just action else Maybe.Nothing
+  in
+    Signal.map (\bool -> let d1 = Debug.watch actionKey bool in action) (KeyBindings.signalFor actionKey)
 
 -- VIEW
 
