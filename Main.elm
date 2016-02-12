@@ -10,6 +10,7 @@ import Debug
 import Effects
 import Html exposing (..)
 import StartApp exposing (start)
+import Time
 
 
 main : Signal Html
@@ -94,24 +95,33 @@ update action oldModel =
 
 consumeKeypresses : List (Signal Action)
 consumeKeypresses =
-  [ consume "LeftPlayerTurn"    Noop
-  , consume "LeftPlayerGoUp"    LeftPlayerGoUp
-  , consume "LeftPlayerGoDown"  LeftPlayerGoDown
-  , consume "LeftPlayerFall"    Noop
-  , consume "RightPlayerTurn"   Noop
-  , consume "RightPlayerGoUp"   Noop
-  , consume "RightPlayerGoDown" Noop
-  , consume "RightPlayerFall"   Noop
-  , consume "TogglePause"       TogglePause
+  [ consumeKeyDown  "LeftPlayerTurn"    Noop
+  , consumeKeyFPS 6 "LeftPlayerGoUp"    LeftPlayerGoUp
+  , consumeKeyFPS 6 "LeftPlayerGoDown"  LeftPlayerGoDown
+  , consumeKeyDown  "LeftPlayerFall"    Noop
+  , consumeKeyDown  "RightPlayerTurn"   Noop
+  , consumeKeyFPS 6 "RightPlayerGoUp"   Noop
+  , consumeKeyFPS 6 "RightPlayerGoDown" Noop
+  , consumeKeyDown  "RightPlayerFall"   Noop
+  , consumeKeyDown  "TogglePause"       TogglePause
   ]
 
-consume : String -> Action -> (Signal Action)
-consume actionKey action =
+consumeKeyDown : String -> Action -> (Signal Action)
+consumeKeyDown actionKey action =
   let
     onlyOnKeyDown : Bool -> (Maybe Action)
-    onlyOnKeyDown bool = if bool then Maybe.Just action else Maybe.Nothing
+    onlyOnKeyDown down = if down then Maybe.Just action else Maybe.Nothing
   in
     Signal.filterMap onlyOnKeyDown Noop (KeyBindings.signalFor actionKey)
+
+consumeKeyFPS : Int -> String -> Action -> (Signal Action)
+consumeKeyFPS fps actionKey action =
+  let
+    onlyOnKeyDown : Bool -> (Maybe Action)
+    onlyOnKeyDown down = if down then Maybe.Just action else Maybe.Nothing
+  in
+    Signal.filterMap onlyOnKeyDown Noop (Signal.map2 always (KeyBindings.signalFor actionKey) (Time.fps fps))
+
 
 -- VIEW
 
