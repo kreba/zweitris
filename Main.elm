@@ -102,13 +102,9 @@ consumeKeyDown : String -> Action -> (Signal Action)
 consumeKeyDown actionKey action =
     Signal.filterMap (onlyOnKeyDown action) Noop (KeyBindings.signalFor actionKey)
 
-{-| We should be able to implement this in a better way, i.e. always start a timer when a key is pressed.
-    With the current implementation the repetition seems arbitrary at times.
-    See http://www.stackoverflow.com/a/28737486/1212000
--}
 consumeKeyFPS : Int -> String -> Action -> (Signal Action)
 consumeKeyFPS fps actionKey action =
-    Signal.filterMap (onlyOnKeyDown action) Noop (Signal.map2 always (KeyBindings.signalFor actionKey) (Time.fps fps))
+    Signal.filterMap (onlyOnKeyDown action) Noop (Signal.sampleOn (Time.fps fps) (KeyBindings.signalFor actionKey))
 
 onlyOnKeyDown : Action -> Bool -> (Maybe Action)
 onlyOnKeyDown action down = if down then Maybe.Just action else Maybe.Nothing
@@ -116,8 +112,8 @@ onlyOnKeyDown action down = if down then Maybe.Just action else Maybe.Nothing
 
 continuousFalling : List (Signal Action)
 continuousFalling =
-  [ Signal.map (always <| RelayToMPLeft  <| CellCollection.MoveBy (  1 , 0 )) (Time.every 1000)
-  , Signal.map (always <| RelayToMPRight <| CellCollection.MoveBy ( -1 , 0 )) (Time.every 1000)
+  [ Signal.map (always <| RelayToMPLeft  <| CellCollection.MoveBy (  1 , 0 )) (Time.every Time.second)
+  , Signal.map (always <| RelayToMPRight <| CellCollection.MoveBy ( -1 , 0 )) (Time.every Time.second)
   ]
 
 
