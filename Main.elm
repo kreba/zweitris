@@ -51,6 +51,7 @@ type Action
   = RelayToBoard CellCollection.Action
   | RelayToMPLeft CellCollection.Action
   | RelayToMPRight CellCollection.Action
+  | LeftPlayerGoUp
   | LeftPlayerGoDown
   | TogglePause
   | Reset
@@ -72,6 +73,9 @@ update action oldModel =
       RelayToMPRight pieceAction ->
         { oldModel | mpRight = MovingPiece.update pieceAction oldModel.mpRight }
 
+      LeftPlayerGoUp ->
+        { oldModel | mpLeft = MovingPiece.moveUp oldModel.mpLeft }
+
       LeftPlayerGoDown ->
         { oldModel | mpLeft = MovingPiece.moveDown oldModel.mpLeft }
 
@@ -90,23 +94,24 @@ update action oldModel =
 
 consumeKeypresses : List (Signal Action)
 consumeKeypresses =
-  [ consume "leftPlayerTurn"    Noop
-  , consume "leftPlayerGoUp"    Noop
-  , consume "leftPlayerGoDown"  LeftPlayerGoDown
-  , consume "leftPlayerFall"    Noop
-  , consume "rightPlayerTurn"   Noop
-  , consume "rightPlayerGoUp"   Noop
-  , consume "rightPlayerGoDown" Noop
-  , consume "rightPlayerFall"   Noop
-  , consume "pause"             TogglePause
+  [ consume "LeftPlayerTurn"    Noop
+  , consume "LeftPlayerGoUp"    LeftPlayerGoUp
+  , consume "LeftPlayerGoDown"  LeftPlayerGoDown
+  , consume "LeftPlayerFall"    Noop
+  , consume "RightPlayerTurn"   Noop
+  , consume "RightPlayerGoUp"   Noop
+  , consume "RightPlayerGoDown" Noop
+  , consume "RightPlayerFall"   Noop
+  , consume "TogglePause"       TogglePause
   ]
 
 consume : String -> Action -> (Signal Action)
 consume actionKey action =
   let
+    onlyOnKeyDown : Bool -> (Maybe Action)
     onlyOnKeyDown bool = if bool then Maybe.Just action else Maybe.Nothing
   in
-    Signal.map (\bool -> let d1 = Debug.watch actionKey bool in action) (KeyBindings.signalFor actionKey)
+    Signal.filterMap onlyOnKeyDown Noop (KeyBindings.signalFor actionKey)
 
 -- VIEW
 

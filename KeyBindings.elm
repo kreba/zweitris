@@ -15,15 +15,15 @@ keysDown = Signal.map filter Keyboard.keysDown
 -}
 all : Dict String Char.KeyCode
 all = Dict.fromList
-  [ ( "leftPlayerTurn"    , Char.toCode 'A' )
-  , ( "leftPlayerGoUp"    , Char.toCode 'Q' )
-  , ( "leftPlayerGoDown"  , Char.toCode 'S' )
-  , ( "leftPlayerFall"    , Char.toCode 'W' )
-  , ( "rightPlayerTurn"   , Char.toCode 'L' )
-  , ( "rightPlayerGoUp"   , Char.toCode 'P' )
-  , ( "rightPlayerGoDown" , Char.toCode 'K' )
-  , ( "rightPlayerFall"   , Char.toCode 'O' )
-  , ( "pause"             , Char.toCode ' ' )
+  [ ( "LeftPlayerTurn"    , Char.toCode 'A' )
+  , ( "LeftPlayerGoUp"    , Char.toCode 'Q' )
+  , ( "LeftPlayerGoDown"  , Char.toCode 'S' )
+  , ( "LeftPlayerFall"    , Char.toCode 'W' )
+  , ( "RightPlayerTurn"   , Char.toCode 'L' )
+  , ( "RightPlayerGoUp"   , Char.toCode 'P' )
+  , ( "RightPlayerGoDown" , Char.toCode 'K' )
+  , ( "RightPlayerFall"   , Char.toCode 'O' )
+  , ( "TogglePause"       , Char.toCode ' ' )
   ]
 
 
@@ -40,13 +40,13 @@ If multiple keys in a mutex set are pressed together, we will not invoke any of 
 -}
 mutexSets : List (Set Char.KeyCode)
 mutexSets =
-  [ codesFor [ "leftPlayerTurn" ]
-  , codesFor [ "leftPlayerGoUp" , "leftPlayerGoDown" ]
-  , codesFor [ "leftPlayerFall" ]
-  , codesFor [ "rightPlayerTurn" ]
-  , codesFor [ "rightPlayerGoUp" , "rightPlayerGoDown" ]
-  , codesFor [ "rightPlayerFall" ]
-  , codesFor [ "pause" ]
+  [ codesFor [ "LeftPlayerTurn" ]
+  , codesFor [ "LeftPlayerGoUp" , "LeftPlayerGoDown" ]
+  , codesFor [ "LeftPlayerFall" ]
+  , codesFor [ "RightPlayerTurn" ]
+  , codesFor [ "RightPlayerGoUp" , "RightPlayerGoDown" ]
+  , codesFor [ "RightPlayerFall" ]
+  , codesFor [ "TogglePause" ]
   ]
 
 
@@ -65,8 +65,7 @@ Rejects mutually exclusive keys when pressed together.
 filter : Set Char.KeyCode -> Set Char.KeyCode
 filter keyCodes =
   let
-    d1 = Debug.watch "pressedKeys" (Set.foldr (++) "" (Set.map (String.fromChar << Char.fromCode) keyCodes))
-    d2 = Debug.watch "acceptedKeys" (Set.foldr (++) "" (Set.map (String.fromChar << Char.fromCode) allAcceptedKeys))
+    d2 = Debug.watch "accepted keys" (Set.foldr (++) "" (Set.map (String.fromChar << Char.fromCode) allAcceptedKeys))
     allAcceptedKeys = List.foldr accept Set.empty mutexSets
     accept mutexSet acceptedKeys =
       let
