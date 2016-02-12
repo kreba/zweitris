@@ -24,7 +24,7 @@ app =
     { init = ( initialModel , Effects.none )
     , update = update
     , view = view
-    , inputs = consumeKeypresses 
+    , inputs = consumeKeypresses ++ continuousFalling
     }
 
 
@@ -112,6 +112,13 @@ consumeKeyFPS fps actionKey action =
 
 onlyOnKeyDown : Action -> Bool -> (Maybe Action)
 onlyOnKeyDown action down = if down then Maybe.Just action else Maybe.Nothing
+
+
+continuousFalling : List (Signal Action)
+continuousFalling =
+  [ Signal.map (always <| RelayToMPLeft  <| CellCollection.MoveBy (  1 , 0 )) (Time.every 1000)
+  , Signal.map (always <| RelayToMPRight <| CellCollection.MoveBy ( -1 , 0 )) (Time.every 1000)
+  ]
 
 
 -- VIEW
