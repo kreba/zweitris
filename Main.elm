@@ -24,7 +24,7 @@ app =
     { init = ( initialModel , Effects.none )
     , update = update
     , view = view
-    , inputs = consumeKeypresses
+    , inputs = consumeKeypresses 
     }
 
 
@@ -52,8 +52,6 @@ type Action
   = RelayToBoard CellCollection.Action
   | RelayToMPLeft CellCollection.Action
   | RelayToMPRight CellCollection.Action
-  | LeftPlayerGoUp
-  | LeftPlayerGoDown
   | TogglePause
   | Reset
   | Noop
@@ -62,7 +60,7 @@ type Action
 update : Action -> Model -> ( Model , Effects.Effects Action )
 update action oldModel =
   let
-    d1 = Debug.watchSummary "update with action" toString action
+    d1 = Debug.watchSummary "Main.update" toString action
     newModel = case action of
 
       RelayToBoard boardAction ->
@@ -73,12 +71,6 @@ update action oldModel =
 
       RelayToMPRight pieceAction ->
         { oldModel | mpRight = MovingPiece.update pieceAction oldModel.mpRight }
-
-      LeftPlayerGoUp ->
-        { oldModel | mpLeft = MovingPiece.moveUp oldModel.mpLeft }
-
-      LeftPlayerGoDown ->
-        { oldModel | mpLeft = MovingPiece.moveDown oldModel.mpLeft }
 
       TogglePause ->
         { oldModel | paused = not oldModel.paused }
@@ -95,32 +87,31 @@ update action oldModel =
 
 consumeKeypresses : List (Signal Action)
 consumeKeypresses =
-  [ consumeKeyDown  "LeftPlayerTurn"    Noop
-  , consumeKeyFPS 6 "LeftPlayerGoUp"    LeftPlayerGoUp
-  , consumeKeyFPS 6 "LeftPlayerGoDown"  LeftPlayerGoDown
-  , consumeKeyDown  "LeftPlayerFall"    Noop
-  , consumeKeyDown  "RightPlayerTurn"   Noop
-  , consumeKeyFPS 6 "RightPlayerGoUp"   Noop
-  , consumeKeyFPS 6 "RightPlayerGoDown" Noop
-  , consumeKeyDown  "RightPlayerFall"   Noop
-  , consumeKeyDown  "TogglePause"       TogglePause
+  [ consumeKeyDown   "LeftPlayerTurn"    Noop
+  , consumeKeyFPS  6 "LeftPlayerGoUp"    (RelayToMPLeft (CellCollection.MoveBy ( 0 , -1 )))
+  , consumeKeyFPS  6 "LeftPlayerGoDown"  (RelayToMPLeft (CellCollection.MoveBy ( 0 ,  1 )))
+  , consumeKeyFPS 18 "LeftPlayerFall"    (RelayToMPLeft (CellCollection.MoveBy ( 1 ,  0 )))
+  , consumeKeyDown   "RightPlayerTurn"   Noop
+  , consumeKeyFPS  6 "RightPlayerGoUp"   (RelayToMPRight (CellCollection.MoveBy (  0 , -1 )))
+  , consumeKeyFPS  6 "RightPlayerGoDown" (RelayToMPRight (CellCollection.MoveBy (  0 ,  1 )))
+  , consumeKeyFPS 18 "RightPlayerFall"   (RelayToMPRight (CellCollection.MoveBy ( -1 ,  0 )))
+  , consumeKeyDown   "TogglePause"       TogglePause
   ]
 
 consumeKeyDown : String -> Action -> (Signal Action)
 consumeKeyDown actionKey action =
-  let
-    onlyOnKeyDown : Bool -> (Maybe Action)
-    onlyOnKeyDown down = if down then Maybe.Just action else Maybe.Nothing
-  in
-    Signal.filterMap onlyOnKeyDown Noop (KeyBindings.signalFor actionKey)
+    Signal.filterMap (onlyOnKeyDown action) Noop (KeyBindings.signalFor actionKey)
 
+{-| We should be able to implement this in a better way, i.e. always start a timer when a key is pressed.
+    With the current implementation the repetition seems arbitrary at times.
+    See http://www.stackoverflow.com/a/28737486/1212000
+-}
 consumeKeyFPS : Int -> String -> Action -> (Signal Action)
 consumeKeyFPS fps actionKey action =
-  let
-    onlyOnKeyDown : Bool -> (Maybe Action)
-    onlyOnKeyDown down = if down then Maybe.Just action else Maybe.Nothing
-  in
-    Signal.filterMap onlyOnKeyDown Noop (Signal.map2 always (KeyBindings.signalFor actionKey) (Time.fps fps))
+    Signal.filterMap (onlyOnKeyDown action) Noop (Signal.map2 always (KeyBindings.signalFor actionKey) (Time.fps fps))
+
+onlyOnKeyDown : Action -> Bool -> (Maybe Action)
+onlyOnKeyDown action down = if down then Maybe.Just action else Maybe.Nothing
 
 
 -- VIEW

@@ -27,9 +27,9 @@ init positions player =
 
 moveUp : Model -> Model
 moveUp model =
-  { cells = List.map (Cell.update (Cell.MoveByXY (0, -1))) model.cells }
+  { cells = List.map (Cell.update (Cell.MoveBy (0, -1))) model.cells }
 
 
 moveDown : Model -> Model
 moveDown model =
-  { cells = List.map (Cell.update (Cell.MoveByXY (0, 1))) model.cells }
+  { cells = List.map (Cell.update (Cell.MoveBy (0, 1))) model.cells }

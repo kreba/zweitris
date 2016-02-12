@@ -15,12 +15,17 @@ type alias Model = List Cell.Model
 
 type Action
   = RelayToCell Cell.Position Cell.Action
+  | MoveBy Cell.Position
 
 update : Action -> Model -> Model
 update action model =
   case action of
+
     RelayToCell targetCellPos cellAction ->
       List.map (updateSingleCell targetCellPos cellAction) model
+
+    MoveBy xy ->
+      List.map (Cell.update (Cell.MoveBy xy)) model
 
 
 updateSingleCell : Cell.Position -> Cell.Action -> Cell.Model -> Cell.Model

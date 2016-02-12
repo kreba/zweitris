@@ -20,14 +20,14 @@ init position player = { pos = position , owner = player }
 -- UPDATE
 
 type Action
-  = SetPlayer Player
-  | MoveByXY Position
+  = SetOwner Player
+  | MoveBy Position
 
 update : Action -> Model -> Model
 update action model =
   case action of
-    SetPlayer player -> { model | owner = player }
-    MoveByXY (x, y) -> {model | pos = (fst model.pos + x, snd model.pos + y)}
+    SetOwner player -> { model | owner = player }
+    MoveBy (x, y) -> { model | pos = ( fst model.pos + x , snd model.pos + y ) }
 
 
 -- VIEW
