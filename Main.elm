@@ -9,7 +9,7 @@ import KeyBindings
 import Debug
 import Effects
 import Html exposing (..)
-import StartApp exposing (start)
+import StartApp
 import Time
 
 
@@ -20,7 +20,7 @@ main =
 
 app : StartApp.App Model
 app =
-  start
+  StartApp.start
     { init = ( initialModel , Effects.none )
     , update = update
     , view = view
@@ -39,9 +39,9 @@ type alias Model =
 
 initialModel : Model
 initialModel =
-  { board = Board.init { w = 20 , h = 8 }
+  { board = Board.init { w = 32 , h = 10 }
   , mpLeft = MovingPiece.init [ (1,3),(2,3),(2,4),(2,5) ] Player.Left
-  , mpRight = MovingPiece.init [ (19,4),(20,3),(20,4),(20,5) ] Player.Right
+  , mpRight = MovingPiece.init [ (31,4),(32,3),(32,4),(32,5) ] Player.Right
   , paused = False
   }
 
@@ -87,11 +87,11 @@ update action oldModel =
 
 consumeKeypresses : List (Signal Action)
 consumeKeypresses =
-  [ consumeKeyDown   "LeftPlayerTurn"    Noop
+  [ consumeKeyDown   "LeftPlayerTurn"    (RelayToMPLeft CellCollection.TurnCW)
   , consumeKeyFPS  6 "LeftPlayerGoUp"    (RelayToMPLeft (CellCollection.MoveBy ( 0 , -1 )))
   , consumeKeyFPS  6 "LeftPlayerGoDown"  (RelayToMPLeft (CellCollection.MoveBy ( 0 ,  1 )))
   , consumeKeyFPS 18 "LeftPlayerFall"    (RelayToMPLeft (CellCollection.MoveBy ( 1 ,  0 )))
-  , consumeKeyDown   "RightPlayerTurn"   Noop
+  , consumeKeyDown   "RightPlayerTurn"   (RelayToMPRight CellCollection.TurnCW)
   , consumeKeyFPS  6 "RightPlayerGoUp"   (RelayToMPRight (CellCollection.MoveBy (  0 , -1 )))
   , consumeKeyFPS  6 "RightPlayerGoDown" (RelayToMPRight (CellCollection.MoveBy (  0 ,  1 )))
   , consumeKeyFPS 18 "RightPlayerFall"   (RelayToMPRight (CellCollection.MoveBy ( -1 ,  0 )))
