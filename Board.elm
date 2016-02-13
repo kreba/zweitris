@@ -8,7 +8,23 @@ import Util
 import Html exposing (..)
 
 
-type alias Model  = { cells : CellCollection.Model }
+type alias Model =
+  { cells : CellCollection.Model
+  }
+
+
+up : ( Int , Int )
+up = ( 0 , -1 )
+
+down : ( Int , Int )
+down = ( 0 , 1 )
+
+left : ( Int , Int )
+left = ( -1 , 0 )
+
+right : ( Int , Int )
+right = ( 1 , 0 )
+
 
 update : CellCollection.Action -> Model -> Model
 update action model =

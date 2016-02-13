@@ -35,8 +35,7 @@ update action model =
 view : Signal.Address Action -> Model -> Html
 view address model =
   let
-    posX = fst model.pos
-    posY = snd model.pos
+    (posX,posY) = model.pos
     cellSize = 20
     elementStyle =
       [ ("background-color", Player.color model.owner)

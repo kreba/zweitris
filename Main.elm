@@ -6,7 +6,6 @@ import MovingPiece
 import Player
 import KeyBindings
 
-import Debug
 import Effects
 import Html exposing (..)
 import StartApp
@@ -50,8 +49,7 @@ initialModel =
 
 type Action
   = RelayToBoard CellCollection.Action
-  | RelayToMPLeft CellCollection.Action
-  | RelayToMPRight CellCollection.Action
+  | RelayToMP Player.Player CellCollection.Action
   | TogglePause
   | Reset
   | Noop
@@ -60,17 +58,24 @@ type Action
 update : Action -> Model -> ( Model , Effects.Effects Action )
 update action oldModel =
   let
-    d1 = Debug.watchSummary "Main.update" toString action
     newModel = case action of
 
       RelayToBoard boardAction ->
         { oldModel | board = Board.update boardAction oldModel.board }
 
-      RelayToMPLeft pieceAction ->
-        { oldModel | mpLeft = MovingPiece.update pieceAction oldModel.mpLeft }
+      RelayToMP player pieceAction ->
+        let
 
-      RelayToMPRight pieceAction ->
-        { oldModel | mpRight = MovingPiece.update pieceAction oldModel.mpRight }
+          getPiece player = case player of
+            Player.Left  -> oldModel.mpLeft
+            Player.Right -> oldModel.mpRight
+
+          setPiece player piece = case player of
+            Player.Left  -> { oldModel | mpLeft  = piece }
+            Player.Right -> { oldModel | mpRight = piece }
+
+        in
+          setPiece player <| MovingPiece.update pieceAction (getPiece player)
 
       TogglePause ->
         { oldModel | paused = not oldModel.paused }
@@ -87,33 +92,28 @@ update action oldModel =
 
 consumeKeypresses : List (Signal Action)
 consumeKeypresses =
-  [ consumeKeyDown   "LeftPlayerTurn"    (RelayToMPLeft CellCollection.TurnCW)
-  , consumeKeyFPS  6 "LeftPlayerGoUp"    (RelayToMPLeft (CellCollection.MoveBy ( 0 , -1 )))
-  , consumeKeyFPS  6 "LeftPlayerGoDown"  (RelayToMPLeft (CellCollection.MoveBy ( 0 ,  1 )))
-  , consumeKeyFPS 18 "LeftPlayerFall"    (RelayToMPLeft (CellCollection.MoveBy ( 1 ,  0 )))
-  , consumeKeyDown   "RightPlayerTurn"   (RelayToMPRight CellCollection.TurnCW)
-  , consumeKeyFPS  6 "RightPlayerGoUp"   (RelayToMPRight (CellCollection.MoveBy (  0 , -1 )))
-  , consumeKeyFPS  6 "RightPlayerGoDown" (RelayToMPRight (CellCollection.MoveBy (  0 ,  1 )))
-  , consumeKeyFPS 18 "RightPlayerFall"   (RelayToMPRight (CellCollection.MoveBy ( -1 ,  0 )))
-  , consumeKeyDown   "TogglePause"       TogglePause
-  ]
-
-consumeKeyDown : String -> Action -> (Signal Action)
-consumeKeyDown actionKey action =
-    Signal.filterMap (onlyOnKeyDown action) Noop (KeyBindings.signalFor actionKey)
-
-consumeKeyFPS : Int -> String -> Action -> (Signal Action)
-consumeKeyFPS fps actionKey action =
-    Signal.filterMap (onlyOnKeyDown action) Noop (Signal.sampleOn (Time.fps fps) (KeyBindings.signalFor actionKey))
-
-onlyOnKeyDown : Action -> Bool -> (Maybe Action)
-onlyOnKeyDown action down = if down then Maybe.Just action else Maybe.Nothing
+  let slowly = 6
+      fast = 18
+      onKeyDown action isDown = if isDown then Maybe.Just action else Maybe.Nothing
+      consumeAs action = Signal.filterMap (onKeyDown action) Noop
+      once = consumeAs
+      repeat fps action = consumeAs action << Signal.sampleOn (Time.fps fps)
+  in  [ KeyBindings.signalFor "LeftPlayerTurn"    |> once          (RelayToMP Player.Left CellCollection.TurnCW)
+      , KeyBindings.signalFor "LeftPlayerGoUp"    |> repeat slowly (RelayToMP Player.Left (CellCollection.MoveBy Board.up))
+      , KeyBindings.signalFor "LeftPlayerGoDown"  |> repeat slowly (RelayToMP Player.Left (CellCollection.MoveBy Board.down))
+      , KeyBindings.signalFor "LeftPlayerFall"    |> repeat fast   (RelayToMP Player.Left (CellCollection.MoveBy Board.right))
+      , KeyBindings.signalFor "RightPlayerTurn"   |> once          (RelayToMP Player.Right CellCollection.TurnCW)
+      , KeyBindings.signalFor "RightPlayerGoUp"   |> repeat slowly (RelayToMP Player.Right (CellCollection.MoveBy Board.up))
+      , KeyBindings.signalFor "RightPlayerGoDown" |> repeat slowly (RelayToMP Player.Right (CellCollection.MoveBy Board.down))
+      , KeyBindings.signalFor "RightPlayerFall"   |> repeat fast   (RelayToMP Player.Right (CellCollection.MoveBy Board.left))
+      , KeyBindings.signalFor "TogglePause"       |> once          TogglePause
+      ]
 
 
 continuousFalling : List (Signal Action)
 continuousFalling =
-  [ Signal.map (always <| RelayToMPLeft  <| CellCollection.MoveBy (  1 , 0 )) (Time.every Time.second)
-  , Signal.map (always <| RelayToMPRight <| CellCollection.MoveBy ( -1 , 0 )) (Time.every Time.second)
+  [ Time.every Time.second |> Signal.map (\_ -> RelayToMP Player.Left  (CellCollection.MoveBy (  1 , 0 )))
+  , Time.every Time.second |> Signal.map (\_ -> RelayToMP Player.Right (CellCollection.MoveBy ( -1 , 0 )))
   ]
 
 
@@ -124,7 +124,7 @@ view address model =
   let
     info = text (if model.paused then "PAUSED" else "RUNNING")
     board = Board.view (Signal.forwardTo address RelayToBoard) model.board
-    mpLeft = MovingPiece.view (Signal.forwardTo address RelayToMPLeft) model.mpLeft
-    mpRight = MovingPiece.view (Signal.forwardTo address RelayToMPRight) model.mpRight
+    mpLeft = MovingPiece.view (Signal.forwardTo address (RelayToMP Player.Left)) model.mpLeft
+    mpRight = MovingPiece.view (Signal.forwardTo address (RelayToMP Player.Right)) model.mpRight
   in
     div [] [ info , board , mpLeft , mpRight ]

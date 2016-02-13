@@ -38,13 +38,11 @@ update action model =
         updateCell : Cell.Model -> Cell.Model
         updateCell cell =
           let
-            relativeXold = fst cell.pos - xMin
-            relativeYold = snd cell.pos - yMin
-            relativeXnew = pieceSizeX - relativeYold
-            relativeYnew = relativeXold
-            diff = ( relativeXnew - relativeXold , relativeYnew - relativeYold )
+            (relativeXold,relativeYold) = ( fst cell.pos - xMin , snd cell.pos - yMin )
+            (relativeXnew,relativeYnew) = ( pieceSizeX - relativeYold , relativeXold )
+            (dx,dy) = ( relativeXnew - relativeXold , relativeYnew - relativeYold )
           in
-            Cell.update (Cell.MoveBy diff) cell
+            Cell.update (Cell.MoveBy (dx,dy)) cell
       in
         List.map updateCell model
 
