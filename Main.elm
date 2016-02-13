@@ -74,8 +74,25 @@ update action oldModel =
             Player.Left  -> { oldModel | mpLeft  = piece }
             Player.Right -> { oldModel | mpRight = piece }
 
+          withinBoard pieceCell =
+            let (x,y) = pieceCell.pos
+                (w,h) = oldModel.board.size
+            in  (0 < x && x <= w) && (0 < y && y <= h)
+
+          noCollision pieceCell =
+            List.all (\boardCell -> boardCell.pos /= pieceCell.pos || boardCell.owner /= pieceCell.owner) oldModel.board.cells
+
+          acceptable piece =
+            List.all withinBoard piece.cells &&
+            List.all noCollision piece.cells
+
+          newPiece = MovingPiece.update pieceAction (getPiece player)
+
         in
-          setPiece player <| MovingPiece.update pieceAction (getPiece player)
+          if acceptable newPiece then
+            setPiece player newPiece
+          else
+            oldModel
 
       TogglePause ->
         { oldModel | paused = not oldModel.paused }

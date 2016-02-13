@@ -10,6 +10,7 @@ import Html exposing (..)
 
 type alias Model =
   { cells : CellCollection.Model
+  , size : ( Int , Int )
   }
 
 
@@ -42,4 +43,6 @@ init {w,h} =
     cellFor pos = Cell.init pos (leftOrRight pos)
     leftOrRight pos = if fst pos > w // 2 then Player.Left else Player.Right
   in
-    { cells = List.map cellFor positions }
+    { cells = List.map cellFor positions
+    , size = ( w , h )
+    }
