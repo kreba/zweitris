@@ -38,11 +38,11 @@ type alias Model =
 
 initialModel : Model
 initialModel =
-  { board = Board.init { w = 32 , h = 10 }
-  , mpLeft = MovingPiece.init [ (1,3),(2,3),(2,4),(2,5) ] Player.Left
-  , mpRight = MovingPiece.init [ (31,4),(32,3),(32,4),(32,5) ] Player.Right
-  , paused = False
-  }
+    { board     = Board.init { w = 32 , h = 10 }
+    , mpLeft    = MovingPiece.init Player.Left 22536475869
+    , mpRight   = MovingPiece.init Player.Right 43245678
+    , paused    = False
+    }
 
 
 -- UPDATE

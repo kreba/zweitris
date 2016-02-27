@@ -36,7 +36,7 @@ view : Signal.Address Action -> Model -> Html
 view address model =
   let
     (posX,posY) = model.pos
-    cellSize = 20
+    cellSize = 45
     elementStyle =
       [ ("background-color", Player.color model.owner)
       , ("color", Player.color model.owner)
