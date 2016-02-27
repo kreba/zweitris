@@ -26,19 +26,24 @@ app =
     , inputs = consumeKeypresses ++ continuousFalling
     }
 
+boardWidth : Int
+boardWidth = 32
+
+boardHight : Int
+boardHight = 10
 
 -- MODEL
 
 type alias Model =
-  { board : Board.Model
-  , mpLeft : MovingPiece.Model
+  { board   : Board.Model
+  , mpLeft  : MovingPiece.Model
   , mpRight : MovingPiece.Model
-  , paused : Bool
+  , paused  : Bool
   }
 
 initialModel : Model
 initialModel =
-    { board     = Board.init { w = 32 , h = 10 }
+    { board     = Board.init { w = boardWidth , h = boardHight}
     , mpLeft    = MovingPiece.init Player.Left 22536475869
     , mpRight   = MovingPiece.init Player.Right 43245678
     , paused    = False
