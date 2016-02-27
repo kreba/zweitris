@@ -10,7 +10,6 @@ import Random
 
 type alias Model  =
     { cells : CellCollection.Model
-    , seed : Random.Seed
     }
 
 update : CellCollection.Action -> Model -> Model
@@ -51,11 +50,10 @@ randomPiece seed =
         (piece, seed)
 
 
-init : Player -> Int -> Model
-init player i =
+init : Player -> Random.Seed -> ( Model , Random.Seed )
+init player seed =
   let
-    seed = Random.initialSeed i
-    (positions, seed1) = randomPiece seed
+    (positions, nextSeed) = randomPiece seed
     cellFor pos =
         let
             (x, y) = pos
@@ -66,9 +64,7 @@ init player i =
         in
             Cell.init pos player
   in
-    { cells = List.map cellFor positions
-    , seed = seed1
-    }
+    ( { cells = List.map cellFor positions } , nextSeed )
 
 
 moveUp : Model -> Model

@@ -8,6 +8,7 @@ import KeyBindings
 
 import Effects
 import Html exposing (..)
+import Random
 import StartApp
 import Time
 
@@ -39,14 +40,21 @@ type alias Model =
   , mpLeft  : MovingPiece.Model
   , mpRight : MovingPiece.Model
   , paused  : Bool
+  , seed    : Random.Seed
   }
 
 initialModel : Model
 initialModel =
-    { board     = Board.init { w = boardWidth , h = boardHight}
-    , mpLeft    = MovingPiece.init Player.Left 22536475869
-    , mpRight   = MovingPiece.init Player.Right 43245678
-    , paused    = False
+  let
+    seed1 = Random.initialSeed 22536475869
+    (mpLeft, seed2) = MovingPiece.init Player.Left seed1
+    (mpRight, seed) = MovingPiece.init Player.Right seed2
+  in
+    { board   = Board.init { w = boardWidth , h = boardHight }
+    , mpLeft  = mpLeft
+    , mpRight = mpRight
+    , paused  = False
+    , seed    = seed
     }
 
 
@@ -55,6 +63,7 @@ initialModel =
 type Action
   = RelayToBoard CellCollection.Action
   | RelayToMP Player.Player CellCollection.Action
+  | ContinuousFall Player.Player
   | TogglePause
   | Reset
   | Noop
@@ -63,36 +72,53 @@ type Action
 update : Action -> Model -> ( Model , Effects.Effects Action )
 update action oldModel =
   let
+    getPiece player = case player of
+      Player.Left  -> oldModel.mpLeft
+      Player.Right -> oldModel.mpRight
+
+    setPiece player piece = case player of
+      Player.Left  -> { oldModel | mpLeft  = piece }
+      Player.Right -> { oldModel | mpRight = piece }
+
+    withinBoard pieceCell =
+      let (x,y) = pieceCell.pos
+          (w,h) = oldModel.board.size
+      in  (0 < x && x <= w) && (0 < y && y <= h)
+
+    noCollision pieceCell =
+      List.all (\boardCell -> boardCell.pos /= pieceCell.pos || boardCell.owner /= pieceCell.owner) oldModel.board.cells
+
+    acceptable piece =
+      List.all withinBoard piece.cells &&
+      List.all noCollision piece.cells
+
     newModel = case action of
 
       RelayToBoard boardAction ->
         { oldModel | board = Board.update boardAction oldModel.board }
 
+      ContinuousFall player ->
+        let
+          oldPiece = getPiece player
+          pieceAction =
+            case player of
+              Player.Left  -> CellCollection.MoveBy Board.right
+              Player.Right -> CellCollection.MoveBy Board.left
+          updatedPiece = MovingPiece.update pieceAction oldPiece
+        in
+          if acceptable updatedPiece then
+            setPiece player updatedPiece
+          else
+            -- merge oldPiece oldModel
+            let
+              (newPiece, newSeed) = MovingPiece.init player oldModel.seed
+              newModel = setPiece player newPiece
+            in
+              { newModel | seed = newSeed }
+
       RelayToMP player pieceAction ->
         let
-
-          getPiece player = case player of
-            Player.Left  -> oldModel.mpLeft
-            Player.Right -> oldModel.mpRight
-
-          setPiece player piece = case player of
-            Player.Left  -> { oldModel | mpLeft  = piece }
-            Player.Right -> { oldModel | mpRight = piece }
-
-          withinBoard pieceCell =
-            let (x,y) = pieceCell.pos
-                (w,h) = oldModel.board.size
-            in  (0 < x && x <= w) && (0 < y && y <= h)
-
-          noCollision pieceCell =
-            List.all (\boardCell -> boardCell.pos /= pieceCell.pos || boardCell.owner /= pieceCell.owner) oldModel.board.cells
-
-          acceptable piece =
-            List.all withinBoard piece.cells &&
-            List.all noCollision piece.cells
-
           newPiece = MovingPiece.update pieceAction (getPiece player)
-
         in
           if acceptable newPiece then
             setPiece player newPiece
@@ -134,8 +160,8 @@ consumeKeypresses =
 
 continuousFalling : List (Signal Action)
 continuousFalling =
-  [ Time.every Time.second |> Signal.map (\_ -> RelayToMP Player.Left  (CellCollection.MoveBy (  1 , 0 )))
-  , Time.every Time.second |> Signal.map (\_ -> RelayToMP Player.Right (CellCollection.MoveBy ( -1 , 0 )))
+  [ Time.every Time.second |> Signal.map (\_ -> ContinuousFall Player.Left)
+  , Time.every Time.second |> Signal.map (\_ -> ContinuousFall Player.Right)
   ]
 
 
