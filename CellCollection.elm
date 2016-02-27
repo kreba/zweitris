@@ -15,12 +15,16 @@ type alias Model = List Cell.Model
 
 type Action
   = RelayToCell Cell.Position Cell.Action
+  | MergeFrom Model
   | MoveBy Cell.Position
   | TurnCW
 
 update : Action -> Model -> Model
 update action model =
   case action of
+
+    MergeFrom other ->
+      List.map (mergeFrom other) model
 
     RelayToCell targetCellPos cellAction ->
       List.map (updateSingleCell targetCellPos cellAction) model
@@ -53,6 +57,15 @@ updateSingleCell targetCellPos cellAction cell =
   else
     cell
 
+mergeFrom : List Cell.Model -> Cell.Model -> Cell.Model
+mergeFrom newCells oldCell =
+  case cellAt oldCell.pos newCells of
+    Just newCell -> newCell
+    Nothing      -> oldCell
+
+cellAt : Cell.Position -> List Cell.Model -> Maybe Cell.Model
+cellAt pos model =
+  List.head <| List.filter (\a -> a.pos == pos) model
 
 
 -- VIEW

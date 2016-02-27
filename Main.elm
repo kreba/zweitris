@@ -36,11 +36,11 @@ boardHight = 10
 -- MODEL
 
 type alias Model =
-  { board   : Board.Model
-  , mpLeft  : MovingPiece.Model
+  { board : Board.Model
+  , mpLeft : MovingPiece.Model
   , mpRight : MovingPiece.Model
-  , paused  : Bool
-  , seed    : Random.Seed
+  , paused : Bool
+  , seed : Random.Seed
   }
 
 initialModel : Model
@@ -109,12 +109,14 @@ update action oldModel =
           if acceptable updatedPiece then
             setPiece player updatedPiece
           else
-            -- merge oldPiece oldModel
             let
               (newPiece, newSeed) = MovingPiece.init player oldModel.seed
-              newModel = setPiece player newPiece
+              nom = setPiece player newPiece
             in
-              { newModel | seed = newSeed }
+              { nom
+              | board = Board.update (CellCollection.MergeFrom oldPiece.cells) oldModel.board
+              , seed = newSeed
+              }
 
       RelayToMP player pieceAction ->
         let
