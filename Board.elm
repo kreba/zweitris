@@ -71,7 +71,10 @@ score player pieceCells oldBoard =
         posX = case player of
           Player.Left  -> 1
           Player.Right -> w
-        newCell posY = Cell.init (posX, posY) player
+        opposingPlayer = case player of
+          Player.Left  -> Player.Right
+          Player.Right -> Player.Left
+        newCell posY = Cell.init (posX, posY) opposingPlayer
         newColumn = List.map newCell [1..h]
       in
         List.append boardCells newColumn

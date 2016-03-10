@@ -101,7 +101,7 @@ update action oldModel =
       in
         { withNewPiece
         | board = Board.update (CellCollection.MergeFrom oldPiece.cells) oldModel.board
-                    |> Board.score player oldPiece.cells  
+                    |> Board.score player oldPiece.cells
         , seed = newSeed
         }
 
@@ -149,7 +149,7 @@ update action oldModel =
 
 consumeKeypresses : List (Signal Action)
 consumeKeypresses =
-  let slowly = 500
+  let slowly = 200
       fast = 60
       granularity = Time.fps 50
       once action signal = Sampler.triggerOnce action signal |> invocations
