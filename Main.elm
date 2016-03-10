@@ -5,6 +5,7 @@ import Board
 import MovingPiece
 import Player
 import KeyBindings
+import Sampler
 
 import Effects
 import Html exposing (..)
@@ -142,12 +143,12 @@ update action oldModel =
 
 consumeKeypresses : List (Signal Action)
 consumeKeypresses =
-  let slowly = 6
-      fast = 18
-      onKeyDown action isDown = if isDown then Maybe.Just action else Maybe.Nothing
-      consumeAs action = Signal.filterMap (onKeyDown action) Noop
-      once = consumeAs
-      repeat fps action = consumeAs action << Signal.sampleOn (Time.fps fps)
+  let slowly = 150
+      fast = 60
+      granularity = Time.fps 50
+      once action signal = Sampler.triggerOnce action signal |> invocations
+      repeat interval action signal = Sampler.triggerEvery (interval, granularity) action signal |> invocations
+      invocations = Signal.filterMap identity Noop
   in  [ KeyBindings.signalFor "LeftPlayerTurn"    |> once          (RelayToMP Player.Left CellCollection.TurnCW)
       , KeyBindings.signalFor "LeftPlayerGoUp"    |> repeat slowly (RelayToMP Player.Left (CellCollection.MoveBy Board.up))
       , KeyBindings.signalFor "LeftPlayerGoDown"  |> repeat slowly (RelayToMP Player.Left (CellCollection.MoveBy Board.down))
