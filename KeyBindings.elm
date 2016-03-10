@@ -16,16 +16,15 @@ keysDown = Signal.map filter Keyboard.keysDown
 all : Dict String Char.KeyCode
 all = Dict.fromList
   [ ( "LeftPlayerTurn"    , Char.toCode 'A' )
-  , ( "LeftPlayerGoUp"    , Char.toCode 'Q' )
+  , ( "LeftPlayerGoUp"    , Char.toCode 'W' )
   , ( "LeftPlayerGoDown"  , Char.toCode 'S' )
-  , ( "LeftPlayerFall"    , Char.toCode 'W' )
-  , ( "RightPlayerTurn"   , Char.toCode 'L' )
-  , ( "RightPlayerGoUp"   , Char.toCode 'P' )
-  , ( "RightPlayerGoDown" , Char.toCode 'K' )
-  , ( "RightPlayerFall"   , Char.toCode 'O' )
+  , ( "LeftPlayerFall"    , Char.toCode 'D' )
+  , ( "RightPlayerTurn"   , 39 ) -- Right Arrow
+  , ( "RightPlayerGoUp"   , 38 ) -- Up Arrow
+  , ( "RightPlayerGoDown" , 40 ) -- Down Arrow
+  , ( "RightPlayerFall"   , 37 ) -- Left Arrow
   , ( "TogglePause"       , Char.toCode ' ' )
   ]
-
 
 signalFor : String -> (Signal Bool)
 signalFor actionKey =

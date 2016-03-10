@@ -143,7 +143,7 @@ update action oldModel =
 
 consumeKeypresses : List (Signal Action)
 consumeKeypresses =
-  let slowly = 150
+  let slowly = 500
       fast = 60
       granularity = Time.fps 50
       once action signal = Sampler.triggerOnce action signal |> invocations

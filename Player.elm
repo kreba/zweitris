@@ -7,5 +7,5 @@ type Player
 color : Player -> String
 color player =
   case player of
-    Left  -> "lightgreen"
-    Right -> "lightblue"
+    Left  -> "lightgray"
+    Right -> "orange"
