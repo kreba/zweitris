@@ -93,6 +93,19 @@ update action oldModel =
       List.all withinBoard piece.cells &&
       List.all noCollision piece.cells
 
+    mergePieceAndScore player =
+      let
+        oldPiece = getPiece player
+        (newPiece, newSeed) = MovingPiece.init player oldModel.seed
+        withNewPiece = setPiece player newPiece
+      in
+        { withNewPiece
+        | board = Board.update (CellCollection.MergeFrom oldPiece.cells) oldModel.board
+                    |> Board.score player oldPiece.cells  
+        , seed = newSeed
+        }
+
+
     newModel = case action of
 
       RelayToBoard boardAction ->
@@ -110,14 +123,7 @@ update action oldModel =
           if acceptable updatedPiece then
             setPiece player updatedPiece
           else
-            let
-              (newPiece, newSeed) = MovingPiece.init player oldModel.seed
-              nom = setPiece player newPiece
-            in
-              { nom
-              | board = Board.update (CellCollection.MergeFrom oldPiece.cells) oldModel.board
-              , seed = newSeed
-              }
+            mergePieceAndScore player
 
       RelayToMP player pieceAction ->
         let
