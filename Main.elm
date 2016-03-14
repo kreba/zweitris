@@ -99,12 +99,15 @@ update action oldModel =
         (newPiece, newSeed) = MovingPiece.init player oldModel.seed
         withNewPiece = setPiece player newPiece
       in
-        { withNewPiece
-        | board = Board.update (CellCollection.MergeFrom oldPiece.cells) oldModel.board
-                    |> Board.score player oldPiece.cells
-        , seed = newSeed
-        }
-
+        if acceptable newPiece then
+          { withNewPiece
+          | board = Board.update (CellCollection.MergeFrom oldPiece.cells) oldModel.board
+                      |> Board.score player oldPiece.cells
+          , seed = newSeed
+          }
+        else
+          initialModel -- reset
+          
 
     newModel = case action of
 
