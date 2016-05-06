@@ -11497,8 +11497,9 @@ Elm.Main.make = function (_elm) {
          var newSeed = _p8._1;
          var withNewPiece = A2(setPiece,player,newPiece);
          var oldPiece = getPiece(player);
-         return _U.update(withNewPiece,
-         {board: A3($Board.score,player,oldPiece.cells,A2($Board.update,$CellCollection.MergeFrom(oldPiece.cells),oldModel.board)),seed: newSeed});
+         return acceptable(newPiece) ? _U.update(withNewPiece,
+         {board: A3($Board.score,player,oldPiece.cells,A2($Board.update,$CellCollection.MergeFrom(oldPiece.cells),oldModel.board))
+         ,seed: newSeed}) : initialModel;
       };
       var newModel = function () {
          var _p9 = action;
