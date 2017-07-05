@@ -107,7 +107,7 @@ update action oldModel =
           }
         else
           initialModel -- reset
-          
+
 
     newModel = case action of
 
