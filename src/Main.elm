@@ -1,4 +1,4 @@
-module Main where
+module Main exposing (..)
 
 import CellCollection
 import Board
@@ -6,185 +6,255 @@ import MovingPiece
 import Player
 import KeyBindings
 import Sampler
-
-import Effects
-import Html exposing (..)
+import Html exposing (Html, button, div, text)
+import Html.Events exposing (onClick)
 import Random
-import StartApp
 import Time
 
 
-main : Signal Html
+main : Program Never Model Msg
 main =
-  app.html
+    Html.program
+        { init = ( initialModel, Cmd.none )
+        , update = update
+        , view = view
+        , subscriptions = subscriptions
+        }
 
-
-app : StartApp.App Model
-app =
-  StartApp.start
-    { init = ( initialModel , Effects.none )
-    , update = update
-    , view = view
-    , inputs = consumeKeypresses ++ continuousFalling
-    }
 
 boardWidth : Int
-boardWidth = 32
+boardWidth =
+    32
+
 
 boardHight : Int
-boardHight = 10
+boardHight =
+    10
+
+
 
 -- MODEL
 
+
 type alias Model =
-  { board : Board.Model
-  , mpLeft : MovingPiece.Model
-  , mpRight : MovingPiece.Model
-  , paused : Bool
-  , seed : Random.Seed
-  }
+    { board : Board.Model
+    , mpLeft : MovingPiece.Model
+    , mpRight : MovingPiece.Model
+    , paused : Bool
+    , seed : Random.Seed
+    }
+
 
 initialModel : Model
 initialModel =
-  let
-    seed1 = Random.initialSeed 22536475869
-    (mpLeft, seed2) = MovingPiece.init Player.Left seed1
-    (mpRight, seed) = MovingPiece.init Player.Right seed2
-  in
-    { board   = Board.init { w = boardWidth , h = boardHight }
-    , mpLeft  = mpLeft
-    , mpRight = mpRight
-    , paused  = False
-    , seed    = seed
-    }
+    let
+        seed1 =
+            Random.initialSeed 22536475869
+
+        ( mpLeft, seed2 ) =
+            MovingPiece.init Player.Left seed1
+
+        ( mpRight, seed ) =
+            MovingPiece.init Player.Right seed2
+    in
+        { board = Board.init { w = boardWidth, h = boardHight }
+        , mpLeft = mpLeft
+        , mpRight = mpRight
+        , paused = False
+        , seed = seed
+        }
+
 
 
 -- UPDATE
 
-type Action
-  = RelayToBoard CellCollection.Action
-  | RelayToMP Player.Player CellCollection.Action
-  | ContinuousFall Player.Player
-  | TogglePause
-  | Reset
-  | Noop
+
+type Msg
+    = RelayToBoard CellCollection.Msg
+    | RelayToMP Player.Player CellCollection.Msg
+    | ContinuousFall Player.Player
+    | TogglePause
+    | Reset
+    | Noop
 
 
-update : Action -> Model -> ( Model , Effects.Effects Action )
-update action oldModel =
-  let
-    getPiece player = case player of
-      Player.Left  -> oldModel.mpLeft
-      Player.Right -> oldModel.mpRight
-
-    setPiece player piece = case player of
-      Player.Left  -> { oldModel | mpLeft  = piece }
-      Player.Right -> { oldModel | mpRight = piece }
-
-    withinBoard pieceCell =
-      let (x,y) = pieceCell.pos
-          (w,h) = oldModel.board.size
-      in  (0 < x && x <= w) && (0 < y && y <= h)
-
-    noCollision pieceCell =
-      List.all (\boardCell -> boardCell.pos /= pieceCell.pos || boardCell.owner /= pieceCell.owner) oldModel.board.cells
-
-    acceptable piece =
-      List.all withinBoard piece.cells &&
-      List.all noCollision piece.cells
-
-    mergePieceAndScore player =
-      let
-        oldPiece = getPiece player
-        (newPiece, newSeed) = MovingPiece.init player oldModel.seed
-        withNewPiece = setPiece player newPiece
-      in
-        if acceptable newPiece then
-          { withNewPiece
-          | board = Board.update (CellCollection.MergeFrom oldPiece.cells) oldModel.board
-                      |> Board.score player oldPiece.cells
-          , seed = newSeed
-          }
-        else
-          initialModel -- reset
-
-
-    newModel = case action of
-
-      RelayToBoard boardAction ->
-        { oldModel | board = Board.update boardAction oldModel.board }
-
-      ContinuousFall player ->
-        let
-          oldPiece = getPiece player
-          pieceAction =
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg oldModel =
+    let
+        getPiece player =
             case player of
-              Player.Left  -> CellCollection.MoveBy Board.right
-              Player.Right -> CellCollection.MoveBy Board.left
-          updatedPiece = MovingPiece.update pieceAction oldPiece
-        in
-          if acceptable updatedPiece then
-            setPiece player updatedPiece
-          else
-            mergePieceAndScore player
+                Player.Left ->
+                    oldModel.mpLeft
 
-      RelayToMP player pieceAction ->
-        let
-          newPiece = MovingPiece.update pieceAction (getPiece player)
-        in
-          if acceptable newPiece then
-            setPiece player newPiece
-          else
-            oldModel
+                Player.Right ->
+                    oldModel.mpRight
 
-      TogglePause ->
-        { oldModel | paused = not oldModel.paused }
+        setPiece player piece =
+            case player of
+                Player.Left ->
+                    { oldModel | mpLeft = piece }
 
-      Reset ->
-        initialModel
+                Player.Right ->
+                    { oldModel | mpRight = piece }
 
-      Noop ->
-        oldModel
+        withinBoard pieceCell =
+            let
+                ( x, y ) =
+                    pieceCell.pos
 
-  in
-    ( newModel, Effects.none )
+                ( w, h ) =
+                    oldModel.board.size
+            in
+                (0 < x && x <= w) && (0 < y && y <= h)
+
+        noCollision pieceCell =
+            List.all (\boardCell -> boardCell.pos /= pieceCell.pos || boardCell.owner /= pieceCell.owner) oldModel.board.cells
+
+        acceptable piece =
+            List.all withinBoard piece.cells
+                && List.all noCollision piece.cells
+
+        mergePieceAndScore player =
+            let
+                oldPiece =
+                    getPiece player
+
+                ( newPiece, newSeed ) =
+                    MovingPiece.init player oldModel.seed
+
+                withNewPiece =
+                    setPiece player newPiece
+            in
+                if acceptable newPiece then
+                    { withNewPiece
+                        | board =
+                            Board.update (CellCollection.MergeFrom oldPiece.cells) oldModel.board
+                                |> Board.score player oldPiece.cells
+                        , seed = newSeed
+                    }
+                else
+                    initialModel
+
+        -- reset
+        newModel =
+            case msg of
+                RelayToBoard boardMsg ->
+                    { oldModel | board = Board.update boardMsg oldModel.board }
+
+                ContinuousFall player ->
+                    let
+                        oldPiece =
+                            getPiece player
+
+                        pieceMsg =
+                            case player of
+                                Player.Left ->
+                                    CellCollection.MoveBy Board.right
+
+                                Player.Right ->
+                                    CellCollection.MoveBy Board.left
+
+                        updatedPiece =
+                            MovingPiece.update pieceMsg oldPiece
+                    in
+                        if acceptable updatedPiece then
+                            setPiece player updatedPiece
+                        else
+                            mergePieceAndScore player
+
+                RelayToMP player pieceMsg ->
+                    let
+                        newPiece =
+                            MovingPiece.update pieceMsg (getPiece player)
+                    in
+                        if acceptable newPiece then
+                            setPiece player newPiece
+                        else
+                            oldModel
+
+                TogglePause ->
+                    { oldModel | paused = not oldModel.paused }
+
+                Reset ->
+                    initialModel
+
+                Noop ->
+                    oldModel
+    in
+        ( newModel, Cmd.none )
 
 
-consumeKeypresses : List (Signal Action)
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions =
+    Sub.batch consumeKeypresses ++ continuousFalling
+
+
+consumeKeypresses : List (Sub Msg)
 consumeKeypresses =
-  let slowly = 200
-      fast = 60
-      granularity = Time.fps 50
-      once action signal = Sampler.triggerOnce action signal |> invocations
-      repeat interval action signal = Sampler.triggerEvery (interval, granularity) action signal |> invocations
-      invocations = Signal.filterMap identity Noop
-  in  [ KeyBindings.signalFor "LeftPlayerTurn"    |> once          (RelayToMP Player.Left CellCollection.TurnCW)
-      , KeyBindings.signalFor "LeftPlayerGoUp"    |> repeat slowly (RelayToMP Player.Left (CellCollection.MoveBy Board.up))
-      , KeyBindings.signalFor "LeftPlayerGoDown"  |> repeat slowly (RelayToMP Player.Left (CellCollection.MoveBy Board.down))
-      , KeyBindings.signalFor "LeftPlayerFall"    |> repeat fast   (RelayToMP Player.Left (CellCollection.MoveBy Board.right))
-      , KeyBindings.signalFor "RightPlayerTurn"   |> once          (RelayToMP Player.Right CellCollection.TurnCW)
-      , KeyBindings.signalFor "RightPlayerGoUp"   |> repeat slowly (RelayToMP Player.Right (CellCollection.MoveBy Board.up))
-      , KeyBindings.signalFor "RightPlayerGoDown" |> repeat slowly (RelayToMP Player.Right (CellCollection.MoveBy Board.down))
-      , KeyBindings.signalFor "RightPlayerFall"   |> repeat fast   (RelayToMP Player.Right (CellCollection.MoveBy Board.left))
-      , KeyBindings.signalFor "TogglePause"       |> once          TogglePause
-      ]
+    let
+        slowly =
+            200
+
+        fast =
+            60
+
+        granularity =
+            Time.every Time.second * 1 / 50
+
+        once msg signal =
+            Sampler.triggerOnce msg signal |> invocations
+
+        repeat interval msg signal =
+            Sampler.triggerEvery ( interval, granularity ) msg signal |> invocations
+
+        invocations =
+            Sub.filterMap identity Noop
+    in
+        [ KeyBindings.subFor "LeftPlayerTurn" |> once (RelayToMP Player.Left CellCollection.TurnCW)
+        , KeyBindings.subFor "LeftPlayerGoUp" |> repeat slowly (RelayToMP Player.Left (CellCollection.MoveBy Board.up))
+        , KeyBindings.subFor "LeftPlayerGoDown" |> repeat slowly (RelayToMP Player.Left (CellCollection.MoveBy Board.down))
+        , KeyBindings.subFor "LeftPlayerFall" |> repeat fast (RelayToMP Player.Left (CellCollection.MoveBy Board.right))
+        , KeyBindings.subFor "RightPlayerTurn" |> once (RelayToMP Player.Right CellCollection.TurnCW)
+        , KeyBindings.subFor "RightPlayerGoUp" |> repeat slowly (RelayToMP Player.Right (CellCollection.MoveBy Board.up))
+        , KeyBindings.subFor "RightPlayerGoDown" |> repeat slowly (RelayToMP Player.Right (CellCollection.MoveBy Board.down))
+        , KeyBindings.subFor "RightPlayerFall" |> repeat fast (RelayToMP Player.Right (CellCollection.MoveBy Board.left))
+        , KeyBindings.subFor "TogglePause" |> once TogglePause
+        ]
 
 
-continuousFalling : List (Signal Action)
+continuousFalling : List (Sub Msg)
 continuousFalling =
-  [ Time.every Time.second |> Signal.map (\_ -> ContinuousFall Player.Left)
-  , Time.every Time.second |> Signal.map (\_ -> ContinuousFall Player.Right)
-  ]
+    [ Time.every Time.second (\_ -> ContinuousFall Player.Left)
+    , Time.every Time.second (\_ -> ContinuousFall Player.Right)
+    ]
+
 
 
 -- VIEW
 
-view : Signal.Address Action -> Model -> Html
+
+view : Model -> Html Msg
 view address model =
-  let
-    info = text (if model.paused then "PAUSED" else "RUNNING")
-    board = Board.view (Signal.forwardTo address RelayToBoard) model.board
-    mpLeft = MovingPiece.view (Signal.forwardTo address (RelayToMP Player.Left)) model.mpLeft
-    mpRight = MovingPiece.view (Signal.forwardTo address (RelayToMP Player.Right)) model.mpRight
-  in
-    div [] [ info , board , mpLeft , mpRight ]
+    let
+        info =
+            text
+                (if model.paused then
+                    "PAUSED"
+                 else
+                    "RUNNING"
+                )
+
+        board =
+            Html.map RelayToBoard (Board.view model.board)
+
+        mpLeft =
+            Html.map (RelayToMP Player.Left) (MovingPiece.view model.mpLeft)
+
+        mpRight =
+            Html.map (RelayToMP Player.Right) (MovingPiece.view model.mpRight)
+    in
+        div [] [ info, board, mpLeft, mpRight ]

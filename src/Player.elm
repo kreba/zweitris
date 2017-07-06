@@ -1,11 +1,16 @@
-module Player (Player(..), color) where
+module Player exposing (Player(..), color)
+
 
 type Player
-  = Left
-  | Right
+    = Left
+    | Right
+
 
 color : Player -> String
 color player =
-  case player of
-    Left  -> "lightgray"
-    Right -> "orange"
+    case player of
+        Left ->
+            "lightgray"
+
+        Right ->
+            "orange"
