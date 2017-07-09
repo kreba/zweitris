@@ -19,8 +19,8 @@ type alias Model =
 type Msg
     = RelayToCell Cell.Position Cell.Msg
     | MergeFrom Model
-    | MoveBy Cell.Position
-    | TurnCW
+    | Move Cell.Position
+    | Rotate
 
 
 update : Msg -> Model -> Model
@@ -32,10 +32,10 @@ update msg model =
         RelayToCell targetCellPos cellMsg ->
             List.map (updateSingleCell targetCellPos cellMsg) model
 
-        MoveBy xy ->
+        Move xy ->
             List.map (Cell.update (Cell.MoveBy xy)) model
 
-        TurnCW ->
+        Rotate ->
             let
                 xMin =
                     Maybe.withDefault 0 <| List.minimum <| List.map (.pos >> Tuple.first) model
@@ -46,7 +46,7 @@ update msg model =
                 yMin =
                     Maybe.withDefault 0 <| List.minimum <| List.map (.pos >> Tuple.second) model
 
-                pieceSizeX =
+                tetriminoSizeX =
                     xMax - xMin
 
                 updateCell : Cell.Model -> Cell.Model
@@ -56,7 +56,7 @@ update msg model =
                             ( Tuple.first cell.pos - xMin, Tuple.second cell.pos - yMin )
 
                         ( relativeXnew, relativeYnew ) =
-                            ( pieceSizeX - relativeYold, relativeXold )
+                            ( tetriminoSizeX - relativeYold, relativeXold )
 
                         ( dx, dy ) =
                             ( relativeXnew - relativeXold, relativeYnew - relativeYold )

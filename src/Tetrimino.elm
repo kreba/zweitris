@@ -1,4 +1,4 @@
-module MovingPiece exposing (..)
+module Tetrimino exposing (..)
 
 import Cell
 import CellCollection
@@ -23,8 +23,8 @@ view model =
     CellCollection.view model.cells
 
 
-pieces : List (List Cell.Position)
-pieces =
+tetriminos : List (List Cell.Position)
+tetriminos =
     [ [ ( 1, 3 ), ( 2, 3 ), ( 2, 2 ), ( 2, 1 ) ] --   J
     , [ ( 1, 2 ), ( 2, 3 ), ( 2, 2 ), ( 2, 1 ) ] --   T
     , [ ( 1, 1 ), ( 1, 2 ), ( 1, 3 ), ( 2, 3 ) ] --   L
@@ -35,11 +35,11 @@ pieces =
     ]
 
 
-randomPiece : Random.Seed -> ( List Cell.Position, Random.Seed )
-randomPiece seed =
+randomTetrimino : Random.Seed -> ( List Cell.Position, Random.Seed )
+randomTetrimino seed =
     let
         lastItem =
-            List.length pieces - 1
+            List.length tetriminos - 1
 
         generator =
             Random.int 0 lastItem
@@ -47,29 +47,28 @@ randomPiece seed =
         ( randomIndex, nextSeed ) =
             (Random.step generator seed)
 
-        --(randInt, seed)
         getValue item =
             case item of
                 Just i ->
                     i
 
                 Nothing ->
-                    Debug.crash "error: fromJust Nothing"
+                    Debug.crash "error: getValue Nothing"
 
-        piece =
-            pieces
+        tetrimino =
+            tetriminos
                 |> Array.fromList
                 |> Array.get randomIndex
                 |> getValue
     in
-        ( piece, nextSeed )
+        ( tetrimino, nextSeed )
 
 
 init : Player -> Random.Seed -> ( Model, Random.Seed )
 init player seed =
     let
-        (positions, nextSeed) =
-            randomPiece seed
+        ( positions, nextSeed ) =
+            randomTetrimino seed
 
         cellFor pos =
             let

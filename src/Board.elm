@@ -8,30 +8,16 @@ import Html exposing (..)
 import Set
 
 
+directionUp = ( 0, -1 )
+directionDown = ( 0, 1 )
+directionLeft = ( -1, 0 )
+directionRight = ( 1, 0 )
+
+
 type alias Model =
     { cells : CellCollection.Model
     , size : ( Int, Int )
     }
-
-
-up : ( Int, Int )
-up =
-    ( 0, -1 )
-
-
-down : ( Int, Int )
-down =
-    ( 0, 1 )
-
-
-left : ( Int, Int )
-left =
-    ( -1, 0 )
-
-
-right : ( Int, Int )
-right =
-    ( 1, 0 )
 
 
 update : CellCollection.Msg -> Model -> Model
@@ -40,10 +26,10 @@ update msg model =
 
 
 score : Player -> List Cell.Model -> Model -> Model
-score player pieceCells oldBoard =
+score player tetriminoCells oldBoard =
     let
-        pieceColumns =
-            Set.fromList <| List.map (\c -> Tuple.first c.pos) pieceCells
+        tetriminoColumns =
+            Set.fromList <| List.map (\c -> Tuple.first c.pos) tetriminoCells
 
         columnCompleteAt : Int -> List Cell.Model -> Bool
         columnCompleteAt xPos boardCells =
@@ -57,13 +43,13 @@ score player pieceCells oldBoard =
         moveCellsTowardsCenter : Int -> Player -> List Cell.Model -> List Cell.Model
         moveCellsTowardsCenter xPos player boardCells =
             let
-                direction =
+                direction_ =
                     case player of
                         Player.Left ->
-                            right
+                            directionRight
 
                         Player.Right ->
-                            left
+                            directionLeft
 
                 onTheBrightSide cell =
                     case player of
@@ -75,7 +61,7 @@ score player pieceCells oldBoard =
 
                 changePos cell =
                     if onTheBrightSide cell then
-                        { cell | pos = ( (Tuple.first cell.pos) + (Tuple.first direction), (Tuple.second cell.pos) ) }
+                        { cell | pos = ( (Tuple.first cell.pos) + (Tuple.first direction_), (Tuple.second cell.pos) ) }
                     else
                         cell
             in
@@ -124,7 +110,7 @@ score player pieceCells oldBoard =
             else
                 board
     in
-        Set.foldr removeColumnIfComplete oldBoard pieceColumns
+        Set.foldr removeColumnIfComplete oldBoard tetriminoColumns
 
 
 view : Model -> Html CellCollection.Msg
